@@ -2,7 +2,7 @@
 use rand::distributions::Distribution;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::{rc::Rc, hash::Hash};
 
 use gc_arena::{
     unsafe_empty_collect, unsize, Arena, ArenaParameters, Collect, DynamicRootSet, Gc, GcCell,
@@ -15,6 +15,7 @@ struct Wrapper(HashMap<i32, ()>);
 
 impl Drop for Wrapper {
     fn drop(&mut self) {
+        println!("Size: {:?}", std::mem::size_of::<HashMap<i32, ()>>());
         println!("Dropping at: {:?}", self as *mut _)
     }
 }
@@ -28,7 +29,6 @@ fn simple_allocation() {
     unsafe impl<'gc> Collect for TestRoot<'gc> {
         fn trace(&self, cc: CollectionContext) {
             println!("Mid ptr: {:?} {:?}", self.test.0.ptr, &*self.test.read() as *const _);
-            self.test.trace(cc);
         }
     }
 
