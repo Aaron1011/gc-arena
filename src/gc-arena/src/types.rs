@@ -92,7 +92,7 @@ impl GcBox {
 /// This type is never manipulated directly by the GC algorithm, allowing
 /// user-facing `Gc`s to freely cast their pointer to it.
 #[repr(C)]
-pub(crate) struct GcBoxInner<T: ?Sized> {
+pub struct GcBoxInner<T: ?Sized> {
     // The GC flags, used to track the state of the `GcBox`.
     flags: GcFlags,
     /// The next element in the global linked list of allocated objects.

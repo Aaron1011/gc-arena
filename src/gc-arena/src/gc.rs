@@ -14,7 +14,7 @@ use crate::types::{GcBox, GcBoxInner, Invariant};
 /// be stored inside TLS. This, combined with correct `Collect` implementations, means that `Gc`
 /// pointers will never be dangling and are always safe to access.
 pub struct Gc<'gc, T: ?Sized + 'gc> {
-    pub(crate) ptr: NonNull<GcBoxInner<T>>,
+    pub ptr: NonNull<GcBoxInner<T>>,
     pub(crate) _invariant: Invariant<'gc>,
 }
 

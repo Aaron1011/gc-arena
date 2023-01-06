@@ -6,23 +6,45 @@ use std::rc::Rc;
 
 use gc_arena::{
     unsafe_empty_collect, unsize, Arena, ArenaParameters, Collect, DynamicRootSet, Gc, GcCell,
-    GcWeak, Rootable,
+    GcWeak, Rootable, CollectionContext,
 };
+
+#[derive(Collect)]
+#[collect(unsafe_drop)]
+struct Wrapper(HashMap<i32, ()>);
+
+impl Drop for Wrapper {
+    fn drop(&mut self) {
+        println!("Dropping at: {:?}", self as *mut _)
+    }
+}
 
 #[test]
 fn simple_allocation() {
-    #[derive(Collect)]
-    #[collect(no_drop)]
     struct TestRoot<'gc> {
-        test: Gc<'gc, i32>,
+        test: GcCell<'gc, Wrapper>,
     }
 
-    let arena = Arena::<Rootable![TestRoot<'gc>]>::new(ArenaParameters::default(), |mc| TestRoot {
-        test: Gc::allocate(mc, 42),
+    unsafe impl<'gc> Collect for TestRoot<'gc> {
+        fn trace(&self, cc: CollectionContext) {
+            println!("Mid ptr: {:?} {:?}", self.test.0.ptr, &*self.test.read() as *const _);
+            self.test.trace(cc);
+        }
+    }
+
+    let mut arena = Arena::<Rootable![TestRoot<'gc>]>::new(ArenaParameters::default(), |mc| {
+        let test = GcCell::allocate(mc, Wrapper(HashMap::new()));
+        println!();
+        println!("Old ptr: {:?} {:?}", test.0.ptr, &*test.read() as *const _);
+        TestRoot {
+            test: test
+        }
     });
 
+    arena.collect_all();
+
     arena.mutate(|_mc, root| {
-        assert_eq!(*((*root).test), 42);
+        println!("New ptr: {:?} {:?}", root.test.0.ptr, &*root.test.read() as *const _);
     });
 }
 
